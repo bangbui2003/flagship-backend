@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "npm run build:ts && tsc -p test/tsconfig.json && c8 node --test -r ts-node/register \"test/**/*.ts\"",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "build": "tsc && npx prisma generate",
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
@@ -20,7 +20,7 @@
     "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
     "docker:dev": "npx prisma generate && tsx watch src/server.ts",
     "worker": "tsx src/worker/index.ts",
-    "worker:prod": "node dist/worker/index.js",
+    "worker:prod": "node dist/src/worker/index.js",
     "worker:events": "tsx src/worker/event-processor.ts",
     "worker:schedules": "tsx src/worker/schedule-processor.ts",
     "postinstall": "prisma generate",
