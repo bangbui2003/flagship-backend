@@ -27,7 +27,10 @@ export class EventProcessor {
   private processTimer: ReturnType<typeof setInterval> | null = null;
   
   constructor(redisUrl: string, databaseUrl: string) {
-    this.redis = new Redis(redisUrl);
+    this.redis = new Redis(redisUrl, {
+      tls: redisUrl.startsWith("rediss://") ? {} : undefined,
+      maxRetriesPerRequest: 3,
+    });
     
     // Use PostgreSQL adapter like the main backend
     const adapter = new PrismaPg({

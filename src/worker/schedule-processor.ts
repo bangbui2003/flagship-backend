@@ -21,7 +21,10 @@ export class ScheduleProcessor {
     });
     
     this.db = new PrismaClient({ adapter });
-    this.redis = new Redis(redisUrl);
+    this.redis = new Redis(redisUrl, {
+      tls: redisUrl.startsWith("rediss://") ? {} : undefined,
+      maxRetriesPerRequest: 3,
+    });
   }
 
   async start(): Promise<void> {
