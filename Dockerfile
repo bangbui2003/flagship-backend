@@ -9,7 +9,7 @@ FROM base AS deps
 
 COPY prisma ./prisma/
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,id=s/deaf4fd6-4b2f-4ee6-a574-c4403b7cb543-/root/.npm,target=/root/.npm \
+RUN --mount=type=cache,id=s/6fb2f68a-363b-4ed1-b8cf-fa49db118320-/root/.npm,target=/root/.npm \
     npm ci
 
 RUN npx prisma generate
@@ -33,7 +33,7 @@ COPY --from=build /usr/src/app/prisma ./prisma
 
 # Install only production dependencies
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,id=s/deaf4fd6-4b2f-4ee6-a574-c4403b7cb543-/root/.npm,target=/root/.npm \
+RUN --mount=type=cache,id=s/6fb2f68a-363b-4ed1-b8cf-fa49db118320-/root/.npm,target=/root/.npm \
     npm ci --omit=dev
 
 RUN npx prisma generate
