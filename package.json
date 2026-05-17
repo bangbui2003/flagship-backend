@@ -1,0 +1,68 @@
+{
+  "name": "flagship-backend",
+  "version": "1.0.0",
+  "description": "Feature Flag Management Platform - Backend API",
+  "main": "app.ts",
+  "type": "module",
+  "directories": {
+    "test": "test"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test": "npm run build:ts && tsc -p test/tsconfig.json && c8 node --test -r ts-node/register \"test/**/*.ts\"",
+    "start": "node dist/server.js",
+    "build": "tsc && npx prisma generate",
+    "build:ts": "tsc",
+    "watch:ts": "tsc -w",
+    "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
+    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
+    "docker:dev": "npx prisma generate && tsx watch src/server.ts",
+    "worker": "tsx src/worker/index.ts",
+    "worker:prod": "node dist/worker/index.js",
+    "worker:events": "tsx src/worker/event-processor.ts",
+    "worker:schedules": "tsx src/worker/schedule-processor.ts",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push"
+  },
+  "keywords": [
+    "feature-flags",
+    "feature-toggle",
+    "ab-testing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/autoload": "^6.0.0",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/sensible": "^6.0.0",
+    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/client": "^7.4.2",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
+    "fastify": "^5.0.0",
+    "fastify-cli": "^7.4.1",
+    "fastify-plugin": "^5.0.0",
+    "ioredis": "^5.10.1",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/ioredis": "^4.28.10",
+    "@types/node": "^24.11.0",
+    "@types/pg": "^8.11.0",
+    "c8": "^10.1.2",
+    "concurrently": "^9.0.0",
+    "fastify-tsconfig": "^3.0.0",
+    "prisma": "^7.4.2",
+    "ts-node": "^10.4.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "yargs-parser": "20.2.9"
+  }
+}
