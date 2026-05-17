@@ -7,11 +7,9 @@ WORKDIR /usr/src/app
 # --- Stage 1: Install ALL dependencies (including dev) ---
 FROM base AS deps
 
-COPY prisma ./prisma/ 
-
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
+COPY prisma ./prisma/
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm \
     npm ci
 
 RUN npx prisma generate
@@ -34,9 +32,8 @@ ENV NODE_ENV production
 COPY --from=build /usr/src/app/prisma ./prisma
 
 # Install only production dependencies
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
 RUN npx prisma generate
