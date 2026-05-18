@@ -20,8 +20,9 @@ const app: FastifyPluginAsync<AppOptions> = async (
 ): Promise<void> => {
   // Enable CORS for frontend
   await fastify.register(cors, {
-    origin: true, // Allow all origins in development
+    origin: true,
     credentials: true,
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
 
   // Enable cookie parsing

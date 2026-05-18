@@ -3,9 +3,6 @@ import { createHttpError } from "../../core/http/error-handler.js";
 import type { AuditLogQuerystring, CreateAuditLogInput } from "./schema.js";
 
 export class AuditLogService {
-  /**
-   * List audit logs for a project with filtering
-   */
   static async list(
     fastify: FastifyInstance,
     projectId: string,
@@ -23,7 +20,6 @@ export class AuditLogService {
       endDate,
     } = query;
 
-    // Build where clause
     const where: any = { projectId };
 
     if (entityType) where.entityType = entityType;
@@ -66,9 +62,6 @@ export class AuditLogService {
     };
   }
 
-  /**
-   * Get a single audit log by ID
-   */
   static async getById(
     fastify: FastifyInstance,
     projectId: string,
@@ -95,9 +88,6 @@ export class AuditLogService {
     };
   }
 
-  /**
-   * Create an audit log entry (internal use)
-   */
   static async create(fastify: FastifyInstance, input: CreateAuditLogInput) {
     const log = await fastify.db.auditLog.create({
       data: {
@@ -124,9 +114,6 @@ export class AuditLogService {
     };
   }
 
-  /**
-   * Get audit logs for a specific entity
-   */
   static async getByEntity(
     fastify: FastifyInstance,
     projectId: string,
@@ -157,9 +144,6 @@ export class AuditLogService {
     }));
   }
 
-  /**
-   * Helper to compute diff between old and new values
-   */
   static computeDiff(oldValue: any, newValue: any): any {
     if (!oldValue) {
       return { type: "create", new: newValue };

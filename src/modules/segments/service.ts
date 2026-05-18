@@ -3,9 +3,6 @@ import { createHttpError } from "../../core/http/error-handler.js";
 import type { CreateSegmentBody, UpdateSegmentBody } from "./schema.js";
 
 export class SegmentService {
-  /**
-   * List all segments for a project
-   */
   static async list(fastify: FastifyInstance, projectId: string) {
     const segments = await fastify.db.segment.findMany({
       where: { projectId },
@@ -30,9 +27,6 @@ export class SegmentService {
     }));
   }
 
-  /**
-   * Get a single segment by ID
-   */
   static async getById(fastify: FastifyInstance, projectId: string, segmentId: string) {
     const segment = await fastify.db.segment.findFirst({
       where: { id: segmentId, projectId },
@@ -60,15 +54,11 @@ export class SegmentService {
     };
   }
 
-  /**
-   * Create a new segment
-   */
   static async create(
     fastify: FastifyInstance,
     projectId: string,
     data: CreateSegmentBody
   ) {
-    // Verify project exists
     const project = await fastify.db.project.findUnique({
       where: { id: projectId },
     });
@@ -77,7 +67,6 @@ export class SegmentService {
       throw createHttpError(404, "Project not found");
     }
 
-    // Check for duplicate key
     const existing = await fastify.db.segment.findUnique({
       where: {
         projectId_key: { projectId, key: data.key },
@@ -109,9 +98,6 @@ export class SegmentService {
     };
   }
 
-  /**
-   * Update a segment
-   */
   static async update(
     fastify: FastifyInstance,
     projectId: string,
@@ -126,7 +112,6 @@ export class SegmentService {
       throw createHttpError(404, "Segment not found");
     }
 
-    // If updating key, check for duplicates
     if (data.key && data.key !== segment.key) {
       const existing = await fastify.db.segment.findUnique({
         where: {
@@ -167,9 +152,6 @@ export class SegmentService {
     };
   }
 
-  /**
-   * Delete a segment
-   */
   static async delete(fastify: FastifyInstance, projectId: string, segmentId: string) {
     const segment = await fastify.db.segment.findFirst({
       where: { id: segmentId, projectId },
@@ -186,9 +168,6 @@ export class SegmentService {
     return { success: true };
   }
 
-  /**
-   * Get users in a segment with their attributes
-   */
   static async getUsers(
     fastify: FastifyInstance,
     projectId: string,
@@ -215,16 +194,12 @@ export class SegmentService {
       fastify.db.segmentUser.count({ where: { segmentId } }),
     ]);
 
-    // Get user details from User table
     const userKeys = segmentUsers.map((u) => u.userKey);
     const userDetails = await fastify.db.user.findMany({
       where: { key: { in: userKeys } },
     });
 
-    // Create a map for quick lookup
     const userMap = new Map(userDetails.map((u) => [u.key, u.attributes]));
-
-    // Combine segment users with their attributes
     const users = segmentUsers.map((su) => ({
       userKey: su.userKey,
       attributes: userMap.get(su.userKey) || {},
@@ -237,9 +212,6 @@ export class SegmentService {
     };
   }
 
-  /**
-   * Add users to a segment
-   */
   static async addUsers(
     fastify: FastifyInstance,
     projectId: string,
@@ -254,7 +226,6 @@ export class SegmentService {
       throw createHttpError(404, "Segment not found");
     }
 
-    // Use createMany with skipDuplicates to handle existing users
     await fastify.db.segmentUser.createMany({
       data: userKeys.map((userKey) => ({
         segmentId,
@@ -272,9 +243,6 @@ export class SegmentService {
     };
   }
 
-  /**
-   * Remove users from a segment
-   */
   static async removeUsers(
     fastify: FastifyInstance,
     projectId: string,
@@ -305,9 +273,6 @@ export class SegmentService {
     };
   }
 
-  /**
-   * Check if a user is in a segment
-   */
   static async checkUser(
     fastify: FastifyInstance,
     projectId: string,

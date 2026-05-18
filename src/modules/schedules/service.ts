@@ -21,7 +21,6 @@ export class ScheduleService {
     projectId: string,
     options?: { status?: string; flagId?: string }
   ) {
-    // Get all flag versions for this project to filter schedules
     const flagVersions = await fastify.db.flagVersion.findMany({
       where: {
         flag: { projectId },
@@ -40,7 +39,6 @@ export class ScheduleService {
       orderBy: { scheduledAt: "asc" },
     });
 
-    // Enrich with flag and environment info
     const enrichedSchedules = await Promise.all(
       schedules.map(async (schedule) => {
         const flagVersion = await fastify.db.flagVersion.findUnique({
@@ -180,10 +178,6 @@ export class ScheduleService {
     });
   }
 
-  /**
-   * Execute pending schedules that are due
-   * This should be called by a background job/cron
-   */
   static async executePendingSchedules(fastify: FastifyInstance) {
     const now = new Date();
 

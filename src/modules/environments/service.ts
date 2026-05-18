@@ -3,9 +3,6 @@ import { FastifyInstance } from "fastify";
 import { createHttpError } from "../../core/http/error-handler.js";
 
 export class EnvironmentService {
-  /**
-   * Generate a unique API key for SDK authentication.
-   */
   private static generateApiKey(): string {
     return `fls_${randomUUID().replace(/-/g, "")}`;
   }
@@ -38,7 +35,6 @@ export class EnvironmentService {
   ) {
     const { key, name, color } = data;
 
-    // Check unique key within project
     const existing = await fastify.db.environment.findUnique({
       where: {
         projectId_key: { projectId, key },

@@ -90,7 +90,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.code(401).send({ error: "Session expired" });
     }
 
-    return reply.send(user);
+    return reply.send({ user });
   });
 
   // GET /v1/auth/users - List all users (admin only)

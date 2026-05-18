@@ -23,7 +23,7 @@ export default async function flagRoutes(fastify: FastifyInstance) {
     return reply.code(201).send(flag);
   });
 
-  fastify.put("/:id", { schema: updateFlagSchema }, async (request, reply) => {
+  fastify.patch("/:id", { schema: updateFlagSchema }, async (request, reply) => {
     const { projectId } = request.params as { projectId: string };
     const { id } = request.params as { id: string };
     const flag = await FlagService.update(fastify, id, request.body);

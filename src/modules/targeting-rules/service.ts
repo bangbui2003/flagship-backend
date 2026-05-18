@@ -3,12 +3,9 @@ import { createHttpError } from "../../core/http/error-handler.js";
 import { FlagVersionService } from "../flag-versions/service.js";
 
 export class TargetingRuleService {
-  /**
-   * Validate that rollout weights sum to exactly 100000 (100% with 3 decimal precision).
-   */
   private static validateRolloutWeights(rollout: any[]) {
     if (!Array.isArray(rollout) || rollout.length === 0) {
-      return; // Empty rollout is valid (catch-all / no distribution)
+      return;
     }
 
     const totalWeight = rollout.reduce(
@@ -52,10 +49,8 @@ export class TargetingRuleService {
     const { condition, rollout } = data;
     let { orderIndex } = data;
 
-    // Validate rollout weights
     TargetingRuleService.validateRolloutWeights(rollout);
 
-    // Auto-assign orderIndex if not provided
     if (orderIndex === undefined || orderIndex === null) {
       const lastRule = await fastify.db.targetingRule.findFirst({
         where: { flagVersionId },
@@ -74,7 +69,6 @@ export class TargetingRuleService {
       },
     });
 
-    // Trigger recompile of the flag version
     await FlagVersionService.compile(fastify, flagVersionId);
 
     return rule;
@@ -85,7 +79,6 @@ export class TargetingRuleService {
 
     const { orderIndex, condition, rollout } = data;
 
-    // Validate rollout weights if provided
     if (rollout) {
       TargetingRuleService.validateRolloutWeights(rollout);
     }
@@ -95,21 +88,16 @@ export class TargetingRuleService {
       data: { orderIndex, condition, rollout },
     });
 
-    // Trigger recompile
     await FlagVersionService.compile(fastify, existing.flagVersionId);
 
     return updated;
   }
 
-  /**
-   * Reorder all rules within a flag version.
-   */
   static async reorder(
     fastify: FastifyInstance,
     flagVersionId: string,
     order: Array<{ id: string; orderIndex: number }>,
   ) {
-    // Use a transaction to update all at once
     await fastify.db.$transaction(
       order.map((item) =>
         fastify.db.targetingRule.update({

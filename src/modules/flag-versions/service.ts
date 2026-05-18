@@ -3,10 +3,6 @@ import { Prisma } from "@prisma/client";
 import { createHttpError } from "../../core/http/error-handler.js";
 import { SdkConfigService } from "../sdk-config/service.js";
 
-/**
- * The compiled JSONB shape consumed by SDKs for local evaluation.
- * This is the core artifact that powers the flag evaluation engine on the client side.
- */
 interface CompiledFlag {
   flagKey: string;
   enabled: boolean;
@@ -53,7 +49,6 @@ export class FlagVersionService {
       },
     });
 
-    // If no version exists, return null (frontend will handle creating one)
     return flagVersion;
   }
 
@@ -76,10 +71,6 @@ export class FlagVersionService {
     return flagVersion;
   }
 
-  /**
-   * Create a new flag version. Auto-increments the version number
-   * for the given (flagId, environmentId) pair.
-   */
   static async create(
     fastify: FastifyInstance,
     flagId: string,
@@ -87,7 +78,6 @@ export class FlagVersionService {
   ) {
     const { environmentId, isEnabled = false } = data;
 
-    // Get the latest version number for this flag+environment
     const latestVersion = await fastify.db.flagVersion.findFirst({
       where: { flagId, environmentId },
       orderBy: { version: "desc" },
@@ -109,9 +99,6 @@ export class FlagVersionService {
     return flagVersion;
   }
 
-  /**
-   * Toggle the isEnabled state of this flag version and recompile.
-   */
   static async toggle(
     fastify: FastifyInstance,
     id: string,
@@ -124,16 +111,11 @@ export class FlagVersionService {
       data: { isEnabled },
     });
 
-    // Recompile and publish
     await FlagVersionService.compile(fastify, id);
 
     return updated;
   }
 
-  /**
-   * Build the compiled JSONB from flag data + variations + targeting rules.
-   * This compiled payload is what SDKs consume for local evaluation.
-   */
   static async compile(fastify: FastifyInstance, id: string) {
     const flagVersion = await fastify.db.flagVersion.findUnique({
       where: { id },
@@ -149,7 +131,6 @@ export class FlagVersionService {
       throw createHttpError(404, "Flag version not found");
     }
 
-    // Get all variations for this flag
     const variations = await fastify.db.flagVariation.findMany({
       where: { flagId: flagVersion.flagId },
       orderBy: { createdAt: "asc" },
@@ -171,13 +152,11 @@ export class FlagVersionService {
       })),
     };
 
-    // Update the compiled field in the database
     await fastify.db.flagVersion.update({
       where: { id },
       data: { compiled: compiled as unknown as Prisma.InputJsonValue },
     });
 
-    // Invalidate cache and notify SSE clients
     await SdkConfigService.invalidateAndNotify(
       fastify,
       flagVersion.environmentId,

@@ -30,16 +30,10 @@ interface EnvironmentConfig {
 const CACHE_TTL = 300;
 
 export class SdkConfigService {
-  /**
-   * Generate cache key for environment config
-   */
   private static getCacheKey(environmentId: string): string {
     return `sdk:config:${environmentId}`;
   }
 
-  /**
-   * Resolve the environment from an API key.
-   */
   static async resolveEnvironment(fastify: FastifyInstance, apiKey: string) {
     const environment = await fastify.db.environment.findUnique({
       where: { apiKey },
@@ -60,10 +54,6 @@ export class SdkConfigService {
     return environment;
   }
 
-  /**
-   * Get all compiled flags for an environment.
-   * Uses Redis cache with fallback to database.
-   */
   static async getConfig(fastify: FastifyInstance, apiKey: string): Promise<EnvironmentConfig> {
     const environment = await SdkConfigService.resolveEnvironment(
       fastify,
@@ -72,7 +62,6 @@ export class SdkConfigService {
 
     const cacheKey = SdkConfigService.getCacheKey(environment.id);
 
-    // Try to get from cache first
     try {
       const cached = await fastify.redis.get(cacheKey);
       if (cached) {
@@ -83,11 +72,8 @@ export class SdkConfigService {
       fastify.log.warn(err, "Redis cache read failed, falling back to DB");
     }
 
-    // Cache miss - build from database
-    fastify.log.debug(`Cache miss for ${cacheKey}, building from DB`);
     const config = await SdkConfigService.buildConfig(fastify, environment);
 
-    // Store in cache
     try {
       await fastify.redis.setex(cacheKey, CACHE_TTL, JSON.stringify(config));
     } catch (err) {
@@ -97,14 +83,10 @@ export class SdkConfigService {
     return config;
   }
 
-  /**
-   * Build config from database
-   */
   private static async buildConfig(
     fastify: FastifyInstance,
     environment: { id: string; key: string; projectId: string }
   ): Promise<EnvironmentConfig> {
-    // Get all flags for the project
     const flags = await fastify.db.flag.findMany({
       where: {
         projectId: environment.projectId,
@@ -116,7 +98,6 @@ export class SdkConfigService {
       },
     });
 
-    // For each flag, get the latest version in this environment
     const flagConfigs: Record<string, CompiledFlagConfig> = {};
     let maxVersion = 0;
 
@@ -157,9 +138,6 @@ export class SdkConfigService {
     };
   }
 
-  /**
-   * Invalidate cache and notify SSE clients of flag update
-   */
   static async invalidateAndNotify(
     fastify: FastifyInstance,
     environmentId: string,
@@ -168,15 +146,12 @@ export class SdkConfigService {
   ): Promise<void> {
     const cacheKey = SdkConfigService.getCacheKey(environmentId);
 
-    // Invalidate cache
     try {
       await fastify.redis.del(cacheKey);
-      fastify.log.info(`Cache invalidated for ${cacheKey}`);
     } catch (err) {
       fastify.log.warn(err, "Failed to invalidate cache");
     }
 
-    // Publish update to SSE clients via Redis Pub/Sub
     const channel = `flag-updates:${environmentId}`;
     const message = JSON.stringify({
       type: `flag.${action}`,
@@ -187,15 +162,11 @@ export class SdkConfigService {
 
     try {
       await fastify.redis.publish(channel, message);
-      fastify.log.info(`Published flag update to ${channel}`);
     } catch (err) {
       fastify.log.warn(err, "Failed to publish flag update");
     }
   }
 
-  /**
-   * Rebuild and cache config for an environment
-   */
   static async rebuildCache(
     fastify: FastifyInstance,
     environmentId: string
@@ -219,15 +190,11 @@ export class SdkConfigService {
 
     try {
       await fastify.redis.setex(cacheKey, CACHE_TTL, JSON.stringify(config));
-      fastify.log.info(`Cache rebuilt for ${cacheKey}`);
     } catch (err) {
       fastify.log.warn(err, "Failed to rebuild cache");
     }
   }
 
-  /**
-   * Get compiled config for a single flag.
-   */
   static async getSingleFlagConfig(
     fastify: FastifyInstance,
     apiKey: string,

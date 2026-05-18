@@ -13,10 +13,6 @@ export interface AuthUser {
 }
 
 export class AuthService {
-  /**
-   * Hash password using SHA-256 with salt
-   * In production, use bcrypt or argon2
-   */
   static hashPassword(password: string): string {
     const salt = randomBytes(16).toString("hex");
     const hash = createHash("sha256")
@@ -25,16 +21,12 @@ export class AuthService {
     return `${salt}:${hash}`;
   }
 
-  /**
-   * Verify password against stored hash
-   */
   static verifyPassword(password: string, storedHash: string): boolean {
     const [salt, hash] = storedHash.split(":");
     const inputHash = createHash("sha256")
       .update(password + salt)
       .digest("hex");
-    
-    // Use timing-safe comparison to prevent timing attacks
+
     try {
       return timingSafeEqual(Buffer.from(hash), Buffer.from(inputHash));
     } catch {
@@ -42,21 +34,14 @@ export class AuthService {
     }
   }
 
-  /**
-   * Generate a secure session token
-   */
   static generateToken(): string {
     return randomBytes(32).toString("hex");
   }
 
-  /**
-   * Register a new user
-   */
   static async register(
     fastify: FastifyInstance,
     data: { email: string; name: string; password: string; role?: string }
   ): Promise<AuthUser> {
-    // Check if email already exists
     const existing = await fastify.db.userAccount.findUnique({
       where: { email: data.email.toLowerCase() },
     });
@@ -84,9 +69,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Login and create session
-   */
   static async login(
     fastify: FastifyInstance,
     email: string,
@@ -104,7 +86,6 @@ export class AuthService {
       throw createHttpError(401, "Invalid email or password");
     }
 
-    // Create session
     const token = AuthService.generateToken();
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
@@ -116,7 +97,6 @@ export class AuthService {
       },
     });
 
-    // Update last login
     await fastify.db.userAccount.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
@@ -134,9 +114,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Validate session token and return user
-   */
   static async validateSession(
     fastify: FastifyInstance,
     token: string
@@ -146,7 +123,6 @@ export class AuthService {
     });
 
     if (!session || session.expiresAt < new Date()) {
-      // Clean up expired session
       if (session) {
         await fastify.db.session.delete({ where: { id: session.id } });
       }
@@ -169,18 +145,12 @@ export class AuthService {
     };
   }
 
-  /**
-   * Logout - delete session
-   */
   static async logout(fastify: FastifyInstance, token: string): Promise<void> {
     await fastify.db.session.deleteMany({
       where: { token },
     });
   }
 
-  /**
-   * Get user by ID
-   */
   static async getUserById(
     fastify: FastifyInstance,
     userId: string
@@ -201,9 +171,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * List all users (admin only)
-   */
   static async listUsers(fastify: FastifyInstance): Promise<AuthUser[]> {
     const users = await fastify.db.userAccount.findMany({
       where: { isActive: true },
@@ -218,9 +185,6 @@ export class AuthService {
     }));
   }
 
-  /**
-   * Update user role (admin only)
-   */
   static async updateUserRole(
     fastify: FastifyInstance,
     userId: string,
@@ -244,16 +208,13 @@ export class AuthService {
     };
   }
 
-  /**
-   * Check if user has permission for an action
-   */
   static hasPermission(
     user: AuthUser,
     action: string,
     resource: string
   ): boolean {
     const permissions: Record<string, string[]> = {
-      admin: ["*"], // All permissions
+      admin: ["*"],
       developer: [
         "flag:read",
         "flag:create",

@@ -25,7 +25,6 @@ export class WebhookService {
   static async create(fastify: FastifyInstance, projectId: string, data: any) {
     const { name, url, events, secret } = data;
 
-    // Generate secret if not provided
     const webhookSecret = secret || crypto.randomBytes(32).toString("hex");
 
     return await fastify.db.webhook.create({
@@ -100,9 +99,6 @@ export class WebhookService {
     }
   }
 
-  /**
-   * Deliver a webhook to all active webhooks for a project
-   */
   static async deliver(
     fastify: FastifyInstance,
     projectId: string,

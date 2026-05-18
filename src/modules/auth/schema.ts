@@ -60,7 +60,12 @@ export const meSchema = {
   response: {
     200: {
       type: "object",
-      properties: userResponseProperties,
+      properties: {
+        user: {
+          type: "object",
+          properties: userResponseProperties,
+        },
+      },
     },
     401: errorResponse,
   },

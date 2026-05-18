@@ -29,9 +29,6 @@ export interface TimeSeriesData {
 }
 
 export class AnalyticsService {
-  /**
-   * Get overview stats for a project
-   */
   static async getOverview(
     fastify: FastifyInstance,
     projectId: string,
@@ -42,17 +39,15 @@ export class AnalyticsService {
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Get environments for this project
     const environments = await fastify.db.environment.findMany({
       where: { projectId },
       select: { id: true },
     });
 
-    const envIds = environmentId 
-      ? [environmentId] 
+    const envIds = environmentId
+      ? [environmentId]
       : environments.map((e) => e.id);
 
-    // Get total evaluations
     const totalEvaluations = await fastify.db.event.count({
       where: {
         environmentId: { in: envIds },
@@ -60,7 +55,6 @@ export class AnalyticsService {
       },
     });
 
-    // Get unique users
     const uniqueUsersResult = await fastify.db.event.groupBy({
       by: ["userKey"],
       where: {
@@ -70,12 +64,10 @@ export class AnalyticsService {
     });
     const uniqueUsers = uniqueUsersResult.length;
 
-    // Get flags count
     const flagsCount = await fastify.db.flag.count({
       where: { projectId, archived: false },
     });
 
-    // Get active flags (flags with evaluations in the period)
     const activeFlagsResult = await fastify.db.event.groupBy({
       by: ["flagId"],
       where: {
@@ -97,9 +89,6 @@ export class AnalyticsService {
     };
   }
 
-  /**
-   * Get evaluation stats per flag
-   */
   static async getFlagStats(
     fastify: FastifyInstance,
     projectId: string,
@@ -110,17 +99,15 @@ export class AnalyticsService {
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Get environments for this project
     const environments = await fastify.db.environment.findMany({
       where: { projectId },
       select: { id: true },
     });
 
-    const envIds = environmentId 
-      ? [environmentId] 
+    const envIds = environmentId
+      ? [environmentId]
       : environments.map((e) => e.id);
 
-    // Get flags
     const flags = await fastify.db.flag.findMany({
       where: {
         projectId,
@@ -135,7 +122,6 @@ export class AnalyticsService {
     const stats: FlagEvaluationStats[] = [];
 
     for (const flag of flags) {
-      // Get total evaluations for this flag
       const totalEvaluations = await fastify.db.event.count({
         where: {
           flagId: flag.id,
@@ -144,7 +130,6 @@ export class AnalyticsService {
         },
       });
 
-      // Get unique users for this flag
       const uniqueUsersResult = await fastify.db.event.groupBy({
         by: ["userKey"],
         where: {
@@ -155,7 +140,6 @@ export class AnalyticsService {
       });
       const uniqueUsers = uniqueUsersResult.length;
 
-      // Get variation breakdown
       const variationCounts = await fastify.db.event.groupBy({
         by: ["variationId"],
         where: {
@@ -187,15 +171,11 @@ export class AnalyticsService {
       });
     }
 
-    // Sort by total evaluations descending
     stats.sort((a, b) => b.totalEvaluations - a.totalEvaluations);
 
     return stats;
   }
 
-  /**
-   * Get time series data for evaluations
-   */
   static async getTimeSeries(
     fastify: FastifyInstance,
     projectId: string,
@@ -206,17 +186,15 @@ export class AnalyticsService {
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Get environments for this project
     const environments = await fastify.db.environment.findMany({
       where: { projectId },
       select: { id: true },
     });
 
-    const envIds = environmentId 
-      ? [environmentId] 
+    const envIds = environmentId
+      ? [environmentId]
       : environments.map((e) => e.id);
 
-    // Get all events in the period
     const events = await fastify.db.event.findMany({
       where: {
         environmentId: { in: envIds },
@@ -230,7 +208,6 @@ export class AnalyticsService {
       orderBy: { timestamp: "asc" },
     });
 
-    // Group by time bucket
     const buckets = new Map<string, { evaluations: number; users: Set<string> }>();
 
     for (const event of events) {
@@ -245,10 +222,7 @@ export class AnalyticsService {
       bucket.users.add(event.userKey);
     }
 
-    // Convert to array
     const timeSeries: TimeSeriesData[] = [];
-    
-    // Generate all buckets in range
     const current = new Date(start);
     while (current <= end) {
       const bucketKey = AnalyticsService.getBucketKey(current, granularity);
@@ -260,7 +234,6 @@ export class AnalyticsService {
         uniqueUsers: bucket?.users.size || 0,
       });
 
-      // Increment based on granularity
       switch (granularity) {
         case "hour":
           current.setHours(current.getHours() + 1);
@@ -277,9 +250,6 @@ export class AnalyticsService {
     return timeSeries;
   }
 
-  /**
-   * Get top users by evaluation count
-   */
   static async getTopUsers(
     fastify: FastifyInstance,
     projectId: string,
@@ -290,14 +260,13 @@ export class AnalyticsService {
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Get environments for this project
     const environments = await fastify.db.environment.findMany({
       where: { projectId },
       select: { id: true },
     });
 
-    const envIds = environmentId 
-      ? [environmentId] 
+    const envIds = environmentId
+      ? [environmentId]
       : environments.map((e) => e.id);
 
     const topUsers = await fastify.db.event.groupBy({

@@ -11,9 +11,6 @@ interface EventInput {
 }
 
 export class EventService {
-  /**
-   * Ingest a single event.
-   */
   static async ingest(
     fastify: FastifyInstance,
     apiKey: string,
@@ -35,14 +32,10 @@ export class EventService {
       },
     });
 
-    // Convert BigInt id to string for JSON serialization
     return { ...event, id: event.id.toString() };
   }
 
-  /**
-   * Batch ingest events. Phase 1: direct Postgres insert.
-   * Phase 2: should move to Redis Streams → async worker → batch insert.
-   */
+  // Phase 1: direct insert. Move to Redis Streams → worker in Phase 2.
   static async ingestBatch(
     fastify: FastifyInstance,
     apiKey: string,
@@ -67,9 +60,6 @@ export class EventService {
     return { inserted: result.count };
   }
 
-  /**
-   * Query events with cursor-based pagination.
-   */
   static async query(
     fastify: FastifyInstance,
     filters: {

@@ -2,9 +2,6 @@ import { FastifyInstance } from "fastify";
 import { createHttpError } from "../../core/http/error-handler.js";
 
 export class FlagService {
-  /**
-   * Auto-generate a URL-safe key from the name if not provided.
-   */
   private static slugify(name: string): string {
     return name
       .toLowerCase()
@@ -49,12 +46,10 @@ export class FlagService {
       throw createHttpError(400, "Project ID is required");
     }
 
-    // Auto-generate key from name if not provided
     if (!key) {
       key = FlagService.slugify(name);
     }
 
-    // Check for duplicate key within the project
     const existingFlag = await fastify.db.flag.findUnique({
       where: {
         projectId_key: { projectId, key },
