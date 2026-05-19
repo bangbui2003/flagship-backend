@@ -277,7 +277,7 @@ export class AnalyticsService {
       },
       _count: { userKey: true },
       orderBy: { _count: { userKey: "desc" } },
-      take: limit,
+      take: Number(limit),
     });
 
     return topUsers.map((u) => ({
